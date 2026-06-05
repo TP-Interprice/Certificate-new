@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guvohnoma generator</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, sans-serif; background: #eef2f3; color: #1f2937; }
+    .app { display: grid; grid-template-columns: 380px 1fr; gap: 24px; padding: 24px; min-height: 100vh; }
+    .panel { background: #fff; border-radius: 18px; padding: 20px; box-shadow: 0 12px 35px rgba(0,0,0,.08); }
+    h2 { margin: 0 0 16px; color: #0f7a3c; }
+    label { display:block; font-size: 13px; font-weight: 700; margin: 12px 0 6px; }
+    input, textarea { width: 100%; padding: 11px 12px; border: 1px solid #d1d5db; border-radius: 10px; outline: none; font-size: 14px; }
+    textarea { resize: vertical; min-height: 70px; }
+    .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+    button { border: 0; border-radius: 12px; padding: 12px; font-weight: 800; cursor: pointer; }
+    .primary { background:#138a43; color:#fff; }
+    .dark { background:#111827; color:#fff; }
+    .preview-wrap { display:flex; align-items:center; justify-content:center; }
+
+    .card {
+      width: 856px; height: 540px; position: relative; overflow: hidden;
+      background: #fff; border-radius: 28px; box-shadow: 0 20px 55px rgba(0,0,0,.22);
+      transform-origin: center; transform: scale(.82);
+    }
+    .green-bar { position:absolute; right:0; top:0; width:154px; height:100%; background: linear-gradient(180deg,#0f8a43,#1fb35c); }
+    .pattern { position:absolute; right:-65px; top:-40px; width:260px; height:260px; border-radius:50%; border:24px solid rgba(255,255,255,.22); }
+    .pattern2 { position:absolute; right:-60px; bottom:-70px; width:230px; height:230px; border-radius:50%; border:20px solid rgba(255,255,255,.18); }
+    .watermark { position:absolute; left:120px; top:130px; font-size:210px; font-weight:900; color:rgba(20,140,70,.06); transform:rotate(-12deg); }
+    .header { position:absolute; left:34px; top:26px; width:625px; display:flex; gap:16px; align-items:center; }
+    .logo { width:68px; height:68px; border-radius:50%; background:#138a43; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:34px; }
+    .org { font-size:18px; line-height:1.18; font-weight:800; color:#14733c; }
+    .suborg { font-size:14px; color:#374151; margin-top:4px; font-weight:700; }
+    .photo-box { position:absolute; left:60px; top:148px; width:148px; height:148px; border-radius:50%; border:7px solid #159447; overflow:hidden; background:#e5e7eb; display:flex; align-items:center; justify-content:center; color:#6b7280; font-weight:700; }
+    .photo-box img { width:100%; height:100%; object-fit:cover; }
+    .name { position:absolute; left:235px; top:157px; width:410px; color:#11813e; font-size:25px; line-height:1.15; font-weight:900; text-transform:uppercase; }
+    .position { position:absolute; left:235px; top:245px; width:405px; font-size:18px; line-height:1.25; font-weight:800; color:#111827; }
+    .details { position:absolute; left:60px; top:328px; width:580px; display:grid; grid-template-columns: 1fr 1fr; gap:12px 20px; font-size:16px; }
+    .detail strong { display:block; font-size:12px; color:#138a43; text-transform:uppercase; margin-bottom:4px; }
+    .detail span { font-weight:800; color:#111827; }
+    .qr { position:absolute; left:55px; bottom:30px; width:106px; height:106px; background:#fff; padding:6px; border:2px solid #168746; }
+    .serial { position:absolute; right:24px; bottom:28px; color:#fff; font-size:28px; font-weight:900; writing-mode: vertical-rl; transform: rotate(180deg); }
+    .footer-note { position:absolute; left:180px; bottom:42px; width:455px; font-size:16px; line-height:1.25; color:#374151; font-weight:700; }
+    .actions-note { margin-top: 8px; color:#6b7280; font-size:13px; line-height:1.4; }
+    @media (max-width: 1000px) { .app { grid-template-columns:1fr; } .card { transform:scale(.55); } .preview-wrap { min-height:360px; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="panel">
+      <h2>Guvohnoma ma'lumotlari</h2>
+      <label>Tashkilot nomi</label>
+      <textarea id="orgName">Tashkilot nomi</textarea>
+      <label>Bo'lim / boshqarma</label>
+      <input id="department" value="Bo'lim nomi" />
+      <label>F.I.Sh.</label>
+      <input id="fullName" value="FAMILIYA ISM OTASINING ISMI" />
+      <label>Lavozim</label>
+      <textarea id="positionText">Lavozim nomi</textarea>
+      <label>Hudud / uchastka</label>
+      <input id="area" value="2-hudud, 1-uchastka" />
+      <label>Tayinlangan sana</label>
+      <input id="date" value="01.03.2024" />
+      <label>Telefon raqami</label>
+      <input id="phone" value="998901234567" />
+      <label>Guvohnoma №</label>
+      <input id="serial" value="1" />
+      <label>Foto yuklash</label>
+      <input id="photoInput" type="file" accept="image/*" />
+
+      <div class="btns">
+        <button class="primary" onclick="updateCard()">Guvohnoma yaratish</button>
+        <button class="dark" onclick="downloadPdf()">PDF yuklab olish</button>
+      </div>
+      <div class="actions-note">Barcha ish brauzerda bajariladi. Backend va baza kerak emas.</div>
+    </div>
+
+    <div class="panel preview-wrap">
+      <div id="card" class="card">
+        <div class="green-bar"></div>
+        <div class="pattern"></div><div class="pattern2"></div><div class="watermark">ID</div>
+        <div class="header">
+          <div class="logo">ID</div>
+          <div>
+            <div id="cardOrg" class="org"></div>
+            <div id="cardDepartment" class="suborg"></div>
+          </div>
+        </div>
+        <div class="photo-box" id="photoBox">FOTO</div>
+        <div id="cardName" class="name"></div>
+        <div id="cardPosition" class="position"></div>
+        <div class="details">
+          <div class="detail"><strong>Hudud / uchastka</strong><span id="cardArea"></span></div>
+          <div class="detail"><strong>Tayinlangan sana</strong><span id="cardDate"></span></div>
+          <div class="detail"><strong>Telefon</strong><span id="cardPhone"></span></div>
+        </div>
+        <div id="qrcode" class="qr"></div>
+        <div id="cardSerial" class="serial"></div>
+        <div class="footer-note">Ushbu karta ichki identifikatsiya uchun namunaviy shablon hisoblanadi.</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  let photoData = '';
+  const $ = id => document.getElementById(id);
+
+  function updateCard() {
+    $('cardOrg').innerText = $('orgName').value;
+    $('cardDepartment').innerText = $('department').value;
+    $('cardName').innerText = $('fullName').value;
+    $('cardPosition').innerText = $('positionText').value;
+    $('cardArea').innerText = $('area').value;
+    $('cardDate').innerText = $('date').value;
+    $('cardPhone').innerText = $('phone').value;
+    $('cardSerial').innerText = '№ ' + $('serial').value;
+
+    const qrData = {
+      serial: $('serial').value,
+      fullName: $('fullName').value,
+      phone: $('phone').value,
+      position: $('positionText').value,
+      area: $('area').value,
+      date: $('date').value,
+      organization: $('orgName').value,
+      department: $('department').value
+    };
+
+    const qrBox = $('qrcode');
+    qrBox.innerHTML = '';
+    try {
+      new QRCode(qrBox, {
+        text: JSON.stringify(qrData),
+        width: 90,
+        height: 90,
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    } catch (e) {
+      qrBox.innerText = 'QR xatoligi';
+      console.error(e);
+    }
+  }
+
+  $('photoInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      photoData = ev.target.result;
+      $('photoBox').innerHTML = `<img src="${photoData}" alt="photo">`;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  ['orgName','department','fullName','positionText','area','date','phone','serial'].forEach(id => {
+    $(id).addEventListener('input', updateCard);
+  });
+
+  async function downloadPdf() {
+    try {
+      updateCard();
+      await new Promise(r => setTimeout(r, 300));
+
+      const card = $('card');
+      const canvas = await html2canvas(card, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: null
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [85.6, 54] });
+
+      pdf.addImage(imgData, 'PNG', 0, 0, 85.6, 54);
+
+      const fileName = ($('fullName').value || 'guvohnoma').replace(/[^a-zA-Z0-9а-яА-ЯёЁўқғҳЎҚҒҲ_-]/g, '_');
+      pdf.save(fileName + '.pdf');
+    } catch (err) {
+      console.error('PDF yaratishda xatolik:', err);
+      alert('PDF yuklab olishda xatolik yuz berdi');
+    }
+  }
+
+  updateCard();
+</script>
+</body>
+</html>
